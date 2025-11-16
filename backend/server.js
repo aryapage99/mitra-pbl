@@ -6,6 +6,7 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const bookingRoutes = require('./routes/bookings');
 
 // Initialize express app
 const app = express();
@@ -38,6 +39,7 @@ app.get('/', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

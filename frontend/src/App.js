@@ -4,6 +4,7 @@ import { LoginForm, SignUpForm } from "./components/auth/AuthForms";
 import { Sidebar, ProfileMenu } from "./components/ui/Navigation";
 import { ModalTab, BookingModal } from "./components/ui/Modals";
 import { FloorMap } from "./components/map/FloorMap";
+import { BookingHistory } from "./components/profile/BookingHistory";
 import { ROOM_DATA } from "./data/roomData";
 import { COLORS } from "./styles/colors";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -31,6 +32,7 @@ function MainApp() {
     const [bookingRoom, setBookingRoom] = useState(null);
     const [showSidebar, setShowSidebar] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [showBookingHistory, setShowBookingHistory] = useState(false);
 
     if (loading) {
         return (
@@ -57,6 +59,11 @@ function MainApp() {
         return <AuthScreen />;
     }
 
+    // Show booking history if teacher requested it
+    if (showBookingHistory && user.role === 'teacher') {
+        return <BookingHistory user={user} onBack={() => setShowBookingHistory(false)} />;
+    }
+
     return (
         <div style={{ fontFamily: "'Poppins','Inter',sans-serif", background: "#f6f9fb", minHeight: "100vh" }}>
             <Sidebar show={showSidebar} onClose={() => setShowSidebar(false)} onLogout={logout} />
@@ -75,7 +82,15 @@ function MainApp() {
                     <span style={{ fontSize: 32, color: "#25A8E4", cursor: "pointer" }} onClick={() => setShowProfileMenu(prev => !prev)} title="Profile">
                         👤
                     </span>
-                    <ProfileMenu show={showProfileMenu} onLogout={logout} user={user} />
+                    <ProfileMenu 
+                        show={showProfileMenu} 
+                        onLogout={logout} 
+                        user={user} 
+                        onViewBookings={() => {
+                            setShowBookingHistory(true);
+                            setShowProfileMenu(false);
+                        }}
+                    />
                 </div>
             </header>
 
@@ -118,7 +133,7 @@ function MainApp() {
                     <span>Click any room or corridor for details.</span>
                 </div>
                 {selectedRoom && <ModalTab room={selectedRoom} onClose={() => setSelectedRoom(null)} />}
-                {bookingRoom && <BookingModal room={bookingRoom} onClose={() => setBookingRoom(null)} />}
+                {bookingRoom && <BookingModal room={bookingRoom} floor={selectedFloor} onClose={() => setBookingRoom(null)} />}
             </main>
         </div>
     );

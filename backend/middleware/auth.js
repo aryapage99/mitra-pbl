@@ -55,7 +55,38 @@ const authorizeRole = (roles) => {
   };
 };
 
+// Middleware to require teacher role
+const requireTeacher = async (req, res, next) => {
+  try {
+    const User = require('../models/User');
+    const user = await User.findById(req.user.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (user.role !== 'teacher') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only teachers can perform this action'
+      });
+    }
+
+    req.userRole = user.role;
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Authorization error'
+    });
+  }
+};
+
 module.exports = {
   authenticateToken,
-  authorizeRole
+  authorizeRole,
+  requireTeacher
 };
