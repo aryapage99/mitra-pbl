@@ -93,8 +93,7 @@ c:\dev\mitra-pbl\
 
 ## 🔐 Authentication Integration
 
-### How It Works
-
+<!-- ### How It Works -->
 1. **User Registration/Login**:
    - Frontend sends credentials to backend API
    - Backend validates and returns JWT token
