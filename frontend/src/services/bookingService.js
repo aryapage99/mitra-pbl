@@ -15,7 +15,7 @@ const bookingService = {
   async getMyBookings() {
     try {
       const response = await api.get('/bookings/my-bookings');
-      return response.data;
+      return response.data?.data || [];
     } catch (error) {
       throw error.response?.data || error.message;
     }
@@ -24,11 +24,11 @@ const bookingService = {
   // Get all bookings for a specific room (with optional date)
   async getRoomBookings(roomId, date = null) {
     try {
-      const url = date 
-        ? `/bookings/room/${roomId}?date=${date}` 
+      const url = date
+        ? `/bookings/room/${roomId}?date=${date}`
         : `/bookings/room/${roomId}`;
       const response = await api.get(url);
-      return response.data;
+      return response.data?.data || [];
     } catch (error) {
       throw error.response?.data || error.message;
     }
@@ -38,7 +38,7 @@ const bookingService = {
   async getBookingById(bookingId) {
     try {
       const response = await api.get(`/bookings/${bookingId}`);
-      return response.data;
+      return response.data?.data;
     } catch (error) {
       throw error.response?.data || error.message;
     }
@@ -64,42 +64,85 @@ const bookingService = {
 
   // Helper function to check if a time slot is available
   isTimeSlotAvailable(bookings, startTime, endTime) {
-    return !bookings.some(booking => {
+    return !bookings.some((booking) => {
       const bookingStart = booking.start_time;
       const bookingEnd = booking.end_time;
-      return (startTime < bookingEnd && endTime > bookingStart);
+      return startTime < bookingEnd && endTime > bookingStart;
     });
   },
 
-  // Generate available time slots for a room
-  generateTimeSlots(roomType, existingBookings = []) {
-    const slots = [];
-    const startHour = 9; // 9 AM
-    const endHour = 16; // 4 PM
-    const slotDuration = roomType === 'classroom' ? 1 : 1; // Generate 1-hour slots
+  // Get available slots for a room (admin-created)
+  async getAvailableSlots(roomId, date) {
+    try {
+      const params = new URLSearchParams();
+      if (roomId) params.append('roomId', roomId);
+      if (date) params.append('date', date);
 
-    for (let hour = startHour; hour < endHour; hour++) {
-      const startTime = `${hour.toString().padStart(2, '0')}:00:00`;
-      const endTime = `${(hour + 1).toString().padStart(2, '0')}:00:00`;
-      
-      // Check if this slot overlaps with any existing booking
-      const isBooked = existingBookings.some(booking => {
-        return (startTime < booking.end_time && endTime > booking.start_time);
-      });
-
-      slots.push({
-        startTime,
-        endTime,
-        displayTime: `${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00`,
-        isBooked,
-        bookingInfo: isBooked 
-          ? existingBookings.find(b => startTime < b.end_time && endTime > b.start_time)
-          : null
-      });
+      const response = await api.get(
+        `/bookings/available-slots?${params.toString()}`
+      );
+      return response.data?.data || [];
+    } catch (error) {
+      throw error.response?.data || error.message;
     }
+  },
 
-    return slots;
-  }
+  // Generate time slots display with booking status
+  async generateTimeSlots(
+    roomId,
+    roomType,
+    date,
+    existingBookings = []
+  ) {
+    try {
+      // Get admin-created available slots for this room and date
+      const availableSlots = await this.getAvailableSlots(roomId, date);
+
+      // Map available slots to display format
+      const slots = availableSlots.map((slot) => {
+        const startTime = slot.start_time;
+        const endTime = slot.end_time;
+
+        // Check if this slot is already booked
+        const isBooked = existingBookings.some((booking) => {
+          return startTime < booking.end_time && endTime > booking.start_time;
+        });
+
+        const startDate = new Date(`2000-01-01T${startTime}`);
+        const endDate = new Date(`2000-01-01T${endTime}`);
+
+        const formatTime = (dateObj) => {
+          const h = dateObj.getHours().toString().padStart(2, '0');
+          const m = dateObj.getMinutes().toString().padStart(2, '0');
+          return `${h}:${m}`;
+        };
+
+        const durationHours = (endDate - startDate) / (1000 * 60 * 60);
+
+        return {
+          slotId: slot.id,
+          startTime,
+          endTime,
+          displayTime: `${formatTime(startDate)} - ${formatTime(endDate)}`,
+          isBooked,
+          isAvailable: !!slot.is_available && !isBooked,
+          duration: durationHours,
+          bookingInfo: isBooked
+            ? existingBookings.find(
+                (b) => startTime < b.end_time && endTime > b.start_time
+              )
+            : null,
+        };
+      });
+
+      // Sort slots by start time
+      return slots.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    } catch (error) {
+      console.error('Error generating time slots:', error);
+      // Fallback to empty array if admin hasn't created slots yet
+      return [];
+    }
+  },
 };
 
 export default bookingService;

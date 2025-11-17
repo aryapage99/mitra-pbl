@@ -14,6 +14,18 @@ export function LoginForm({ setAuthMode }) {
         setIsSubmitting(true);
         clearError();
 
+        // Validate email domain
+        if (!email.endsWith('@mitwpu.edu.in')) {
+            setIsSubmitting(false);
+            return;
+        }
+
+        // Validate password length
+        if (password.length < 10) {
+            setIsSubmitting(false);
+            return;
+        }
+
         const result = await login({ email, password });
         
         if (!result.success) {
@@ -42,7 +54,9 @@ export function LoginForm({ setAuthMode }) {
                 type="email" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
-                placeholder="Email ID" 
+                placeholder="Email ID (@mitwpu.edu.in)" 
+                pattern=".*@mitwpu\.edu\.in$"
+                title="Email must end with @mitwpu.edu.in"
                 required 
                 disabled={isSubmitting}
             />
@@ -50,7 +64,9 @@ export function LoginForm({ setAuthMode }) {
                 type="password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
-                placeholder="Password" 
+                placeholder="Password (min 10 characters)" 
+                minLength="10"
+                title="Password must be at least 10 characters long"
                 required 
                 disabled={isSubmitting}
             />
@@ -87,6 +103,18 @@ export function SignUpForm({ setAuthMode }) {
         setIsSubmitting(true);
         clearError();
 
+        // Validate email domain
+        if (!email.endsWith('@mitwpu.edu.in')) {
+            setIsSubmitting(false);
+            return;
+        }
+
+        // Validate password strength (minimum 10 characters)
+        if (password.length < 10) {
+            setIsSubmitting(false);
+            return;
+        }
+
         const result = await register({ email, password, role });
         
         if (!result.success) {
@@ -115,7 +143,9 @@ export function SignUpForm({ setAuthMode }) {
                 type="email" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
-                placeholder="Email ID" 
+                placeholder="Email ID (@mitwpu.edu.in)" 
+                pattern=".*@mitwpu\.edu\.in$"
+                title="Email must end with @mitwpu.edu.in"
                 required 
                 disabled={isSubmitting}
             />
@@ -123,7 +153,9 @@ export function SignUpForm({ setAuthMode }) {
                 type="password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
-                placeholder="Password" 
+                placeholder="Password (min 10 characters)" 
+                minLength="10"
+                title="Password must be at least 10 characters long"
                 required 
                 disabled={isSubmitting}
             />

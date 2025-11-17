@@ -16,6 +16,9 @@ router.get('/my-bookings', requireTeacher, bookingController.getMyBookings);
 // Both students and teachers can view room bookings
 router.get('/room/:roomId', bookingController.getRoomBookings);
 
+// Get available slots for booking
+router.get('/available-slots', bookingController.getAvailableSlots);
+
 // Get a specific booking by ID
 router.get('/:id', bookingController.getBookingById);
 

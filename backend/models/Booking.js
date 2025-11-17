@@ -109,6 +109,19 @@ class Booking {
     }
   }
 
+  // Admin delete - can delete any booking
+  static async adminDelete(id) {
+    try {
+      const result = await db.query(
+        'DELETE FROM bookings WHERE id = $1 RETURNING *',
+        [id]
+      );
+      return result.rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Check for overlapping bookings
   static async checkOverlap(roomId, bookingDate, startTime, endTime, excludeBookingId = null) {
     try {

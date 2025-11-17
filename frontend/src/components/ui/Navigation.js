@@ -17,7 +17,7 @@ export function Sidebar({ show, onClose, onLogout }) {
     );
 }
 
-export function ProfileMenu({ show, onLogout, user, onViewBookings, onViewTimetables }) {
+export function ProfileMenu({ show, onLogout, user, onViewBookings, onViewTimetables, onViewAdminDashboard }) {
     if (!show) return null;
     return (
         <div style={{
@@ -28,6 +28,21 @@ export function ProfileMenu({ show, onLogout, user, onViewBookings, onViewTimeta
                 <div style={{fontWeight: 600, color: COLORS.logoBlue}}>{user.email}</div>
                 <div style={{fontSize: 12, color: COLORS.lightText, textTransform: 'capitalize'}}>{user.role}</div>
             </div>
+            {user.role === 'admin' && (
+                <div 
+                    onClick={onViewAdminDashboard} 
+                    style={{ 
+                        fontWeight: 600, 
+                        color: COLORS.logoBlue, 
+                        cursor: "pointer", 
+                        padding: "12px 16px", 
+                        textAlign: "center",
+                        borderBottom: "1px solid #eee"
+                    }}
+                >
+                    Admin Dashboard
+                </div>
+            )}
             {user.role === 'teacher' && (
                 <>
                     <div 

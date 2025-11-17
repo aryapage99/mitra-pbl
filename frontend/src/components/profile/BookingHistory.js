@@ -16,8 +16,8 @@ export function BookingHistory({ user, onBack }) {
         try {
             setLoading(true);
             setError(null);
-            const response = await bookingService.getMyBookings();
-            setBookings(response.data || []);
+            const bookingsData = await bookingService.getMyBookings();
+            setBookings(bookingsData || []);
         } catch (error) {
             console.error('Error fetching bookings:', error);
             setError('Failed to load your bookings');

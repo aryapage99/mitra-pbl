@@ -10,10 +10,11 @@ export function RoomCard({ room, hover, setHover, setSelectedRoom, colorIndex, u
 
     const isBookable = room.type === 'classroom' || room.type === 'lab';
     const isTeacher = user.role === 'teacher';
+    const isAdmin = user.role === 'admin';
 
     const handleBookClick = (e) => {
         e.stopPropagation();
-        if (isTeacher) {
+        if (isTeacher && onBookClick) {
             onBookClick(room);
         }
     };
@@ -39,6 +40,19 @@ export function RoomCard({ room, hover, setHover, setSelectedRoom, colorIndex, u
         cursor: 'not-allowed',
     };
 
+    const adminBadgeStyle = {
+        marginTop: 10,
+        padding: '6px 12px',
+        fontSize: 12,
+        fontWeight: 600,
+        borderRadius: 6,
+        width: '90%',
+        backgroundColor: '#ef4444',
+        color: 'white',
+        border: 'none',
+        cursor: 'default',
+    };
+
     return (
         <div
             style={{
@@ -55,7 +69,12 @@ export function RoomCard({ room, hover, setHover, setSelectedRoom, colorIndex, u
             onClick={() => setSelectedRoom({ ...room })}
         >
             <div style={{ flexGrow: 1}}>{room.label}</div>
-            {isBookable && (
+            {isBookable && isAdmin && (
+                <div style={adminBadgeStyle}>
+                    Admin View
+                </div>
+            )}
+            {isBookable && !isAdmin && (
                 <button
                     style={isTeacher ? buttonStyle : disabledButtonStyle}
                     disabled={!isTeacher}

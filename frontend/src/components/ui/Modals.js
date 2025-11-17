@@ -1,33 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { COLORS } from "../../styles/colors";
 import { today } from "../../data/scheduleData";
 import bookingService from "../../services/bookingService";
 
 export function ModalTab({ room, onClose }) {
-    const [bookings, setBookings] = useState([]);
+    const [timeSlots, setTimeSlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-    useEffect(() => {
-        if (room.type === "classroom" || room.type === "lab") {
-            fetchBookings();
-        }
-    }, [room.id, selectedDate]);
-
-    const fetchBookings = async () => {
+    const fetchBookingsAndSlots = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await bookingService.getRoomBookings(room.id, selectedDate);
-            setBookings(response.data || []);
+            const bookingsData = await bookingService.getRoomBookings(room.id, selectedDate);
+            
+            // Generate time slots based on admin-created slots and existing bookings
+            const slots = await bookingService.generateTimeSlots(room.id, room.type, selectedDate, bookingsData);
+            setTimeSlots(slots);
         } catch (error) {
-            console.error('Error fetching bookings:', error);
-            setBookings([]);
+            console.error('Error fetching bookings and slots:', error);
+            setTimeSlots([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [room.id, room.type, selectedDate]);
 
-    const timeSlots = bookingService.generateTimeSlots(room.type, bookings);
+    useEffect(() => {
+        if (room.type === "classroom" || room.type === "lab") {
+            fetchBookingsAndSlots();
+        }
+    }, [room.type, fetchBookingsAndSlots]);
+
     const isSpace = room.type === "classroom" || room.type === "lab";
 
     return (
@@ -102,33 +104,39 @@ export function ModalTab({ room, onClose }) {
 
 export function BookingModal({ room, onClose, floor }) {
     const [bookings, setBookings] = useState([]);
+    const [timeSlots, setTimeSlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
-    const [selectedDuration, setSelectedDuration] = useState(1);
+    // removed unused selectedDuration state
     const [booking, setBooking] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
     const maxDuration = room.type === 'classroom' ? 1 : 2;
 
-    useEffect(() => {
-        fetchBookings();
-    }, [room.id, bookingDate]);
-
-    const fetchBookings = async () => {
+    const fetchBookingsAndSlots = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await bookingService.getRoomBookings(room.id, bookingDate);
-            setBookings(response.data || []);
+            const bookingsData = await bookingService.getRoomBookings(room.id, bookingDate);
+            setBookings(bookingsData);
+            
+            // Get admin-created time slots
+            const slots = await bookingService.generateTimeSlots(room.id, room.type, bookingDate, bookingsData);
+            setTimeSlots(slots);
         } catch (error) {
-            console.error('Error fetching bookings:', error);
-            setError('Failed to load bookings');
+            console.error('Error fetching bookings and slots:', error);
+            setError('Failed to load bookings and available slots');
             setBookings([]);
+            setTimeSlots([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [room.id, room.type, bookingDate]);
+
+    useEffect(() => {
+        fetchBookingsAndSlots();
+    }, [fetchBookingsAndSlots]);
 
     const handleBook = async (startTime, endTime) => {
         try {
@@ -149,8 +157,8 @@ export function BookingModal({ room, onClose, floor }) {
             await bookingService.createBooking(bookingData);
             setSuccess(`Successfully booked ${room.label}!`);
             
-            // Refresh bookings
-            await fetchBookings();
+            // Refresh the bookings and available slots
+            await fetchBookingsAndSlots();
             
             // Clear success message after 3 seconds
             setTimeout(() => {
@@ -163,8 +171,6 @@ export function BookingModal({ room, onClose, floor }) {
             setBooking(false);
         }
     };
-
-    const timeSlots = bookingService.generateTimeSlots(room.type, bookings);
 
     // Generate duration options based on room type
     const getDurationOptions = (startTime) => {

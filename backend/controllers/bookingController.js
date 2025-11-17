@@ -1,4 +1,6 @@
 const Booking = require('../models/Booking');
+const Slot = require('../models/Slot');
+const db = require('../config/database');
 
 // Create a new booking
 const createBooking = async (req, res) => {
@@ -62,6 +64,41 @@ const createBooking = async (req, res) => {
       endTime,
       durationHours
     });
+
+    // Get teacher details from users table
+    const userResult = await db.query(
+      'SELECT email FROM users WHERE id = $1',
+      [teacherId]
+    );
+    const teacherEmail = userResult.rows[0]?.email;
+
+    // Add/update teacher in teacher table (upsert based on teacher_id)
+    if (teacherEmail) {
+      // Extract name from email (part before @)
+      const teacherName = teacherEmail.split('@')[0];
+      
+      await db.query(
+        `INSERT INTO teacher (teacher_id, name, email) 
+         VALUES ($1, $2, $3) 
+         ON CONFLICT (teacher_id) 
+         DO UPDATE SET 
+           name = EXCLUDED.name,
+           email = EXCLUDED.email`,
+        [teacherId, teacherName, teacherEmail]
+      );
+    }
+
+    // Add/update room in room table with booked status
+    await db.query(
+      `INSERT INTO room (room_id, room_number, type, status) 
+       VALUES ($1, $2, $3, $4) 
+       ON CONFLICT (room_id) 
+       DO UPDATE SET 
+         room_number = EXCLUDED.room_number,
+         type = EXCLUDED.type,
+         status = 'booked'`,
+      [roomId, roomId, roomType, 'booked']
+    );
 
     res.status(201).json({
       success: true,
@@ -168,6 +205,9 @@ const deleteBooking = async (req, res) => {
       });
     }
 
+    // Store room_id before deletion
+    const roomId = booking.room_id;
+
     // Delete the booking
     const deletedBooking = await Booking.delete(id, teacherId);
     
@@ -176,6 +216,34 @@ const deleteBooking = async (req, res) => {
         success: false,
         message: 'Booking not found or already deleted'
       });
+    }
+
+    // Check if teacher has any remaining bookings
+    const remainingBookings = await db.query(
+      'SELECT COUNT(*) as count FROM bookings WHERE teacher_id = $1',
+      [teacherId]
+    );
+    
+    // If teacher has no more bookings, remove from teacher table
+    if (parseInt(remainingBookings.rows[0].count) === 0) {
+      await db.query(
+        'DELETE FROM teacher WHERE teacher_id = $1',
+        [teacherId]
+      );
+    }
+
+    // Check if room has any remaining active bookings
+    const roomBookings = await db.query(
+      'SELECT COUNT(*) as count FROM bookings WHERE room_id = $1',
+      [roomId]
+    );
+    
+    // If no more bookings for this room, set status to available
+    if (parseInt(roomBookings.rows[0].count) === 0) {
+      await db.query(
+        'UPDATE room SET status = $1 WHERE room_id = $2',
+        ['available', roomId]
+      );
     }
 
     res.status(200).json({
@@ -220,10 +288,32 @@ const getBookingById = async (req, res) => {
   }
 };
 
+// Get available slots for booking
+const getAvailableSlots = async (req, res) => {
+  try {
+    const { roomId, date } = req.query;
+    
+    const slots = await Slot.getAvailableSlots(roomId, date);
+    
+    res.status(200).json({
+      success: true,
+      data: slots
+    });
+  } catch (error) {
+    console.error('Error fetching available slots:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching available slots',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createBooking,
   getMyBookings,
   getRoomBookings,
   deleteBooking,
-  getBookingById
+  getBookingById,
+  getAvailableSlots
 };

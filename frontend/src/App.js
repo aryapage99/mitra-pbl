@@ -6,6 +6,7 @@ import { ModalTab, BookingModal } from "./components/ui/Modals";
 import { FloorMap } from "./components/map/FloorMap";
 import { BookingHistory } from "./components/profile/BookingHistory";
 import { TimetableViewer } from "./components/timetable/TimetableViewer";
+import { AdminDashboard } from "./components/admin/AdminDashboard";
 import { ROOM_DATA } from "./data/roomData";
 import { COLORS } from "./styles/colors";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -35,6 +36,7 @@ function MainApp() {
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [showBookingHistory, setShowBookingHistory] = useState(false);
     const [showTimetables, setShowTimetables] = useState(false);
+    const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
     if (loading) {
         return (
@@ -71,6 +73,11 @@ function MainApp() {
         return <BookingHistory user={user} onBack={() => setShowBookingHistory(false)} />;
     }
 
+    // Show admin dashboard if admin requested it
+    if (showAdminDashboard && user.role === 'admin') {
+        return <AdminDashboard user={user} onBack={() => setShowAdminDashboard(false)} />;
+    }
+
     return (
         <div style={{ fontFamily: "'Poppins','Inter',sans-serif", background: "#f6f9fb", minHeight: "100vh" }}>
             <Sidebar show={showSidebar} onClose={() => setShowSidebar(false)} onLogout={logout} />
@@ -99,6 +106,10 @@ function MainApp() {
                         }}
                         onViewBookings={() => {
                             setShowBookingHistory(true);
+                            setShowProfileMenu(false);
+                        }}
+                        onViewAdminDashboard={() => {
+                            setShowAdminDashboard(true);
                             setShowProfileMenu(false);
                         }}
                     />
@@ -138,13 +149,18 @@ function MainApp() {
                     setHover={setHover}
                     setSelectedRoom={setSelectedRoom}
                     user={user}
-                    onBookClick={setBookingRoom}
+                    onBookClick={user.role === 'admin' ? null : setBookingRoom}
                 />
                 <div style={{ marginTop: 20, textAlign: "center", color: "#727780" }}>
-                    <span>Click any room or corridor for details.</span>
+                    <span>
+                        {user.role === 'admin' 
+                            ? "Admin View: Click rooms to see details. Use Admin Dashboard to manage slots." 
+                            : "Click any room or corridor for details."
+                        }
+                    </span>
                 </div>
                 {selectedRoom && <ModalTab room={selectedRoom} onClose={() => setSelectedRoom(null)} />}
-                {bookingRoom && <BookingModal room={bookingRoom} floor={selectedFloor} onClose={() => setBookingRoom(null)} />}
+                {bookingRoom && user.role !== 'admin' && <BookingModal room={bookingRoom} floor={selectedFloor} onClose={() => setBookingRoom(null)} />}
             </main>
         </div>
     );

@@ -21,11 +21,27 @@ const register = async (req, res) => {
       });
     }
 
-    // Validate role
-    if (!['student', 'teacher'].includes(role)) {
+    // Validate email domain
+    if (!email.endsWith('@mitwpu.edu.in')) {
       return res.status(400).json({
         success: false,
-        message: 'Role must be either student or teacher'
+        message: 'Email must be from @mitwpu.edu.in domain'
+      });
+    }
+
+    // Validate password strength (minimum 10 characters)
+    if (password.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 10 characters long'
+      });
+    }
+
+    // Validate role
+    if (!['student', 'teacher', 'admin'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Role must be student, teacher, or admin'
       });
     }
 
@@ -80,6 +96,22 @@ const login = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide email and password'
+      });
+    }
+
+    // Validate email domain
+    if (!email.endsWith('@mitwpu.edu.in')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email must be from @mitwpu.edu.in domain'
+      });
+    }
+
+    // Validate password length
+    if (password.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 10 characters long'
       });
     }
 

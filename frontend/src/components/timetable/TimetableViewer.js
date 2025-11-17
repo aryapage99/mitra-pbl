@@ -10,13 +10,8 @@ export function TimetableViewer({ user, onBack }) {
     const [error, setError] = useState(null);
     
     // Filter states
-    const [programs, setPrograms] = useState([]);
     const [rooms, setRooms] = useState([]);
-    const [selectedProgram, setSelectedProgram] = useState('all');
     const [selectedRoom, setSelectedRoom] = useState('all');
-    const [selectedDay, setSelectedDay] = useState('all');
-    const [selectedRoomType, setSelectedRoomType] = useState('all');
-    const [searchQuery, setSearchQuery] = useState('');
     
     // View mode state
     const [viewMode, setViewMode] = useState('card'); // 'card' or 'grid'
@@ -29,7 +24,7 @@ export function TimetableViewer({ user, onBack }) {
 
     useEffect(() => {
         applyFilters();
-    }, [selectedProgram, selectedRoom, selectedDay, selectedRoomType, searchQuery, timetables]);
+    }, [selectedRoom, timetables]);
 
     const fetchData = async () => {
         try {
@@ -37,14 +32,12 @@ export function TimetableViewer({ user, onBack }) {
             setError(null);
 
             // Fetch all data
-            const [timetablesRes, programsRes, roomsRes] = await Promise.all([
+            const [timetablesRes, roomsRes] = await Promise.all([
                 timetableService.getAllTimetables(),
-                timetableService.getPrograms(),
                 timetableService.getRooms()
             ]);
 
             setTimetables(timetablesRes.data || []);
-            setPrograms(programsRes.data || []);
             setRooms(roomsRes.data || []);
         } catch (error) {
             console.error('Error fetching timetables:', error);
@@ -57,44 +50,16 @@ export function TimetableViewer({ user, onBack }) {
     const applyFilters = () => {
         let filtered = [...timetables];
 
-        // Filter by program
-        if (selectedProgram !== 'all') {
-            filtered = filtered.filter(t => t.program === selectedProgram);
-        }
-
-        // Filter by room
+        // Filter by classroom only
         if (selectedRoom !== 'all') {
             filtered = filtered.filter(t => t.room_id === selectedRoom);
-        }
-
-        // Filter by day
-        if (selectedDay !== 'all') {
-            filtered = filtered.filter(t => t.day_of_week === selectedDay);
-        }
-
-        // Filter by room type
-        if (selectedRoomType !== 'all') {
-            filtered = filtered.filter(t => t.room_type === selectedRoomType);
-        }
-
-        // Search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(t =>
-                t.program?.toLowerCase().includes(query) ||
-                t.room_id?.toLowerCase().includes(query)
-            );
         }
 
         setFilteredTimetables(filtered);
     };
 
     const clearFilters = () => {
-        setSelectedProgram('all');
         setSelectedRoom('all');
-        setSelectedDay('all');
-        setSelectedRoomType('all');
-        setSearchQuery('');
     };
 
     const groupedByDay = timetableService.groupByDay(filteredTimetables);
@@ -141,7 +106,7 @@ export function TimetableViewer({ user, onBack }) {
                     </div>
                 </div>
 
-                {/* Filters */}
+                {/* Classroom Filter */}
                 <div style={{
                     background: "white",
                     borderRadius: 15,
@@ -155,120 +120,69 @@ export function TimetableViewer({ user, onBack }) {
                         alignItems: "center",
                         marginBottom: 15
                     }}>
-                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Filters</h3>
-                        <button
-                            onClick={clearFilters}
-                            style={{
-                                background: "none",
-                                border: "1px solid #ddd",
-                                borderRadius: 6,
-                                padding: "6px 12px",
-                                fontSize: 13,
-                                cursor: "pointer",
-                                color: "#71788e"
-                            }}
-                        >
-                            Clear All
-                        </button>
+                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Filter by Classroom</h3>
+                        {selectedRoom !== 'all' && (
+                            <button
+                                onClick={clearFilters}
+                                style={{
+                                    background: "none",
+                                    border: "1px solid #ddd",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    fontSize: 13,
+                                    cursor: "pointer",
+                                    color: "#71788e"
+                                }}
+                            >
+                                Show All Classrooms
+                            </button>
+                        )}
                     </div>
 
                     <div style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                        gap: 15
+                        display: "flex",
+                        gap: 15,
+                        alignItems: "center"
                     }}>
-                        {/* Search */}
-                        <input
-                            type="text"
-                            placeholder="Search programs or rooms..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            style={{
-                                padding: "10px 12px",
-                                borderRadius: 8,
-                                border: "1px solid #ddd",
-                                fontSize: 14,
-                                outline: "none"
-                            }}
-                        />
-
-                        {/* Program Filter */}
-                        <select
-                            value={selectedProgram}
-                            onChange={(e) => setSelectedProgram(e.target.value)}
-                            style={{
-                                padding: "10px 12px",
-                                borderRadius: 8,
-                                border: "1px solid #ddd",
-                                fontSize: 14,
-                                outline: "none",
-                                cursor: "pointer"
-                            }}
-                        >
-                            <option value="all">All Programs</option>
-                            {programs.map(program => (
-                                <option key={program} value={program}>{program}</option>
-                            ))}
-                        </select>
-
-                        {/* Room Filter */}
+                        <label style={{ fontSize: 14, fontWeight: 500, color: "#222", minWidth: 80 }}>
+                            Classroom:
+                        </label>
                         <select
                             value={selectedRoom}
                             onChange={(e) => setSelectedRoom(e.target.value)}
                             style={{
-                                padding: "10px 12px",
+                                flex: 1,
+                                maxWidth: 400,
+                                padding: "12px 16px",
                                 borderRadius: 8,
-                                border: "1px solid #ddd",
-                                fontSize: 14,
+                                border: "2px solid #ddd",
+                                fontSize: 15,
                                 outline: "none",
-                                cursor: "pointer"
+                                cursor: "pointer",
+                                fontWeight: 500
                             }}
                         >
-                            <option value="all">All Rooms</option>
+                            <option value="all">All Classrooms - View Complete Schedule</option>
                             {rooms.map(room => (
                                 <option key={room.room_id} value={room.room_id}>
                                     {room.room_id} ({room.room_type})
                                 </option>
                             ))}
                         </select>
-
-                        {/* Day Filter */}
-                        <select
-                            value={selectedDay}
-                            onChange={(e) => setSelectedDay(e.target.value)}
-                            style={{
-                                padding: "10px 12px",
-                                borderRadius: 8,
-                                border: "1px solid #ddd",
-                                fontSize: 14,
-                                outline: "none",
-                                cursor: "pointer"
-                            }}
-                        >
-                            <option value="all">All Days</option>
-                            {days.map(day => (
-                                <option key={day} value={day}>{day}</option>
-                            ))}
-                        </select>
-
-                        {/* Room Type Filter */}
-                        <select
-                            value={selectedRoomType}
-                            onChange={(e) => setSelectedRoomType(e.target.value)}
-                            style={{
-                                padding: "10px 12px",
-                                borderRadius: 8,
-                                border: "1px solid #ddd",
-                                fontSize: 14,
-                                outline: "none",
-                                cursor: "pointer"
-                            }}
-                        >
-                            <option value="all">All Types</option>
-                            <option value="classroom">Classrooms</option>
-                            <option value="lab">Labs</option>
-                        </select>
                     </div>
+                    
+                    {selectedRoom !== 'all' && (
+                        <div style={{
+                            marginTop: 15,
+                            padding: 12,
+                            background: "#f0f7ff",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            color: "#2563eb"
+                        }}>
+                            📊 Viewing all programs scheduled in <strong>{selectedRoom}</strong> across all days
+                        </div>
+                    )}
                 </div>
 
                 {/* View Mode Toggle */}
