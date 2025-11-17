@@ -5,6 +5,7 @@ import { Sidebar, ProfileMenu } from "./components/ui/Navigation";
 import { ModalTab, BookingModal } from "./components/ui/Modals";
 import { FloorMap } from "./components/map/FloorMap";
 import { BookingHistory } from "./components/profile/BookingHistory";
+import { TimetableViewer } from "./components/timetable/TimetableViewer";
 import { ROOM_DATA } from "./data/roomData";
 import { COLORS } from "./styles/colors";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -33,6 +34,7 @@ function MainApp() {
     const [showSidebar, setShowSidebar] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [showBookingHistory, setShowBookingHistory] = useState(false);
+    const [showTimetables, setShowTimetables] = useState(false);
 
     if (loading) {
         return (
@@ -57,6 +59,11 @@ function MainApp() {
 
     if (!user) {
         return <AuthScreen />;
+    }
+
+    // Show timetables if teacher requested it
+    if (showTimetables && user.role === 'teacher') {
+        return <TimetableViewer user={user} onBack={() => setShowTimetables(false)} />;
     }
 
     // Show booking history if teacher requested it
@@ -85,7 +92,11 @@ function MainApp() {
                     <ProfileMenu 
                         show={showProfileMenu} 
                         onLogout={logout} 
-                        user={user} 
+                        user={user}
+                        onViewTimetables={() => {
+                            setShowTimetables(true);
+                            setShowProfileMenu(false);
+                        }}
                         onViewBookings={() => {
                             setShowBookingHistory(true);
                             setShowProfileMenu(false);

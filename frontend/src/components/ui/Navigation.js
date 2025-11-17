@@ -17,7 +17,7 @@ export function Sidebar({ show, onClose, onLogout }) {
     );
 }
 
-export function ProfileMenu({ show, onLogout, user, onViewBookings }) {
+export function ProfileMenu({ show, onLogout, user, onViewBookings, onViewTimetables }) {
     if (!show) return null;
     return (
         <div style={{
@@ -29,19 +29,34 @@ export function ProfileMenu({ show, onLogout, user, onViewBookings }) {
                 <div style={{fontSize: 12, color: COLORS.lightText, textTransform: 'capitalize'}}>{user.role}</div>
             </div>
             {user.role === 'teacher' && (
-                <div 
-                    onClick={onViewBookings} 
-                    style={{ 
-                        fontWeight: 600, 
-                        color: COLORS.logoBlue, 
-                        cursor: "pointer", 
-                        padding: "12px 16px", 
-                        textAlign: "center",
-                        borderBottom: "1px solid #eee"
-                    }}
-                >
-                    My Bookings
-                </div>
+                <>
+                    <div 
+                        onClick={onViewTimetables} 
+                        style={{ 
+                            fontWeight: 600, 
+                            color: COLORS.logoBlue, 
+                            cursor: "pointer", 
+                            padding: "12px 16px", 
+                            textAlign: "center",
+                            borderBottom: "1px solid #eee"
+                        }}
+                    >
+                        View Timetables
+                    </div>
+                    <div 
+                        onClick={onViewBookings} 
+                        style={{ 
+                            fontWeight: 600, 
+                            color: COLORS.logoBlue, 
+                            cursor: "pointer", 
+                            padding: "12px 16px", 
+                            textAlign: "center",
+                            borderBottom: "1px solid #eee"
+                        }}
+                    >
+                        My Bookings
+                    </div>
+                </>
             )}
             <div onClick={onLogout} style={{ fontWeight: 600, color: COLORS.logoRed, cursor: "pointer", padding: "12px 16px", textAlign: "center" }}>
                 Logout
